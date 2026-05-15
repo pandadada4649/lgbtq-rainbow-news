@@ -337,7 +337,9 @@ footer a{color:var(--accent)}
     <a href="{{ a.url or url_for('article_detail', article_id=a.id) }}"
        target="{{ '_blank' if a.url else '_self' }}" class="card">
       <div class="card-img">
-        {% if a.image_url %}<img src="{{ a.image_url }}" alt="" onerror="this.style.display='none'">{% endif %}
+       {% if a.image_url and 'google' not in a.image_url %}
+  <img src="{{ a.image_url }}" alt="" onerror="this.style.display='none'">
+{% endif %}
         🌈
         <div class="pickup-badge">FEATURED</div>
         <div class="src-badge">{% if a.source_type=='rss' %}RSS{% else %}投稿{% endif %}</div>
