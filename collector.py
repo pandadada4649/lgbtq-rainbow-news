@@ -1,8 +1,6 @@
 """
 collector.py — RSS自動収集モジュール
-Render Cron Job または /api/collect エンドポイントから呼び出す
 """
-
 import feedparser
 import requests
 from datetime import datetime, timezone
@@ -10,7 +8,6 @@ from bs4 import BeautifulSoup
 
 
 def parse_date(entry):
-    """feedのpublished日時をdatetimeに変換"""
     for attr in ('published_parsed', 'updated_parsed', 'created_parsed'):
         t = getattr(entry, attr, None)
         if t:
@@ -22,7 +19,9 @@ def parse_date(entry):
 
 
 def get_thumbnail(entry, feed_url):
-    """サムネイル画像URLを取得（メディアのみ、OGPは取得しない）"""
+    """Googleニュース系は画像なし、それ以外はメディアから取得"""
+    if 'google' in str(feed_url):
+        return ''
     if hasattr(entry, 'media_thumbnail') and entry.media_thumbnail:
         url = entry.media_thumbnail[0].get('url', '')
         if url and 'google' not in url and 'gstatic' not in url:
@@ -37,7 +36,6 @@ def get_thumbnail(entry, feed_url):
 
 
 def guess_category(text):
-    """テキストからカテゴリを推定"""
     text = text.lower()
     if any(w in text for w in ['パレード', 'parade', 'イベント', 'event', '祭', 'フェス', 'pride']):
         return 'event'
@@ -51,7 +49,6 @@ def guess_category(text):
 
 
 def guess_area(text):
-    """テキストからエリアを推定"""
     if any(w in text for w in ['東京', '渋谷', '新宿', '池袋', '品川']):
         return '東京'
     if any(w in text for w in ['大阪', '梅田', '難波', '心斎橋']):
@@ -66,35 +63,25 @@ def guess_area(text):
 
 
 def collect_all(app, db, Article, RssFeed):
-    """全アクティブフィードを収集してDBに保存"""
     results = {'feeds_checked': 0, 'new_articles': 0, 'skipped': 0, 'errors': []}
-
     with app.app_context():
         feeds = RssFeed.query.filter_by(is_active=True).all()
         results['feeds_checked'] = len(feeds)
-
         for feed in feeds:
             try:
                 parsed = feedparser.parse(feed.url)
-
                 if parsed.bozo and not parsed.entries:
                     results['errors'].append(f'{feed.name}: パース失敗')
                     continue
-
-                for entry in parsed.entries[:20]:  # 1フィードあたり最大20件
+                for entry in parsed.entries[:20]:
                     link = getattr(entry, 'link', '') or ''
                     title = getattr(entry, 'title', '').strip()
-
                     if not title:
                         results['skipped'] += 1
                         continue
-
-                    # 重複チェック（URLベース）
                     if link and Article.query.filter_by(url=link).first():
                         results['skipped'] += 1
                         continue
-
-                    # サマリー取得
                     summary = ''
                     for attr in ('summary', 'description', 'content'):
                         val = getattr(entry, attr, None)
@@ -103,9 +90,7 @@ def collect_all(app, db, Article, RssFeed):
                                 val = val[0].get('value', '')
                             summary = BeautifulSoup(val, 'html.parser').get_text()[:300]
                             break
-
                     full_text = title + ' ' + summary
-
                     article = Article(
                         title        = title[:200],
                         summary      = summary,
@@ -114,23 +99,19 @@ def collect_all(app, db, Article, RssFeed):
                         source_type  = 'rss',
                         category     = feed.category or guess_category(full_text),
                         area         = feed.area or guess_area(full_text),
-                        image_url    = get_thumbnail(entry, feed.url) if 'google' not in feed.url else '',
+                        image_url    = get_thumbnail(entry, feed.url),
                         published_at = parse_date(entry),
                     )
                     db.session.add(article)
                     results['new_articles'] += 1
-
                 feed.last_fetched = datetime.utcnow()
                 db.session.commit()
-
             except Exception as e:
                 results['errors'].append(f'{feed.name}: {str(e)}')
                 db.session.rollback()
-
     return results
 
 
-# --- スタンドアロン実行用 ---
 if __name__ == '__main__':
     from app import app, db, Article, RssFeed
     result = collect_all(app, db, Article, RssFeed)
