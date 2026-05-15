@@ -171,9 +171,18 @@ nav{display:flex;align-items:center;gap:4px}
   width:100%;height:150px;object-fit:cover;
   background:linear-gradient(135deg,#f3e8ff,#fce4ec);
   display:flex;align-items:center;justify-content:center;
-  font-size:3rem;position:relative;overflow:hidden
+  font-size:2rem;position:relative;overflow:hidden
 }
 .card-img img{width:100%;height:100%;object-fit:cover;position:absolute;inset:0}
+/* カテゴリ別背景 */
+.card-img.cat-event{background:linear-gradient(135deg,#fce4ec,#f8bbd0)}
+.card-img.cat-news{background:linear-gradient(135deg,#e3f2fd,#bbdefb)}
+.card-img.cat-rights{background:linear-gradient(135deg,#e8f5e9,#c8e6c9)}
+.card-img.cat-support{background:linear-gradient(135deg,#fff8e1,#ffecb3)}
+.card-img.cat-general{background:linear-gradient(135deg,#f3e5f5,#e1bee7)}
+.card-img.cat-all{background:linear-gradient(135deg,#ede7f6,#e8eaf6)}
+/* カテゴリ絵文字 */
+.cat-emoji{font-size:2.5rem;position:relative;z-index:1}
 .pickup-badge{
   position:absolute;top:8px;left:8px;
   background:#ef5350;color:#fff;
@@ -290,7 +299,12 @@ footer a{color:var(--accent)}
     <h1>日本の<em>LGBTQ+</em><br>ニュース＆イベント</h1>
     <p>全国のコミュニティの最新情報をお届けします</p>
   </div>
- 
+  <div class="stats">
+    <div class="stat"><span class="stat-n" id="sTotal">-</span><div class="stat-l">記事総数</div></div>
+    <div class="stat"><span class="stat-n" id="sRss">-</span><div class="stat-l">RSS収集</div></div>
+    <div class="stat"><span class="stat-n" id="sUser">-</span><div class="stat-l">投稿</div></div>
+    <div class="stat"><span class="stat-n" id="sFeeds">-</span><div class="stat-l">フィード</div></div>
+  </div>
 </div>
 
 <form method="GET" action="/">
@@ -364,12 +378,14 @@ footer a{color:var(--accent)}
   </div>
   <div class="cards">
     {% if articles.items %}
+      {% set cat_emoji = {'event':'🎉','news':'📰','rights':'⚖️','support':'🤝','general':'✨'} %}
       {% for a in articles.items %}
-      <a href="{{ a.url or url_for('article_detail', article_id=a.id) }}"
-         target="{{ '_blank' if a.url else '_self' }}" class="card">
-        <div class="card-img">
-          {% if a.image_url %}<img src="{{ a.image_url }}" alt="" onerror="this.style.display='none'">{% endif %}
-          🌈
+      <a href="{{ url_for('article_detail', article_id=a.id) }}" class="card">
+        <div class="card-img cat-{{ a.category }}">
+          {% if a.image_url %}
+            <img src="{{ a.image_url }}" alt="" onerror="this.remove()">
+          {% endif %}
+          <span class="cat-emoji">{{ cat_emoji.get(a.category, '🌈') }}</span>
           <div class="src-badge">{% if a.source_type=='rss' %}RSS{% else %}投稿{% endif %}</div>
         </div>
         <div class="card-body">
@@ -420,6 +436,13 @@ footer a{color:var(--accent)}
   <div><a href="{{ url_for('feeds_list') }}">フィード管理</a> · <a href="{{ url_for('submit') }}">情報を投稿</a></div>
 </footer>
 
+<script>
+fetch('/api/stats').then(r=>r.json()).then(d=>{
+  document.getElementById('sTotal').textContent = d.total_articles;
+  document.getElementById('sRss').textContent   = d.rss_articles;
+  document.getElementById('sUser').textContent  = d.user_articles;
+  document.getElementById('sFeeds').textContent = d.active_feeds;
+});
 document.addEventListener('click',e=>{
   const mm=document.getElementById('mm');
   if(!mm.contains(e.target)&&!e.target.closest('.hamburger'))mm.classList.remove('open');
