@@ -1,0 +1,145 @@
+"""
+collector.py — RSS自動収集モジュール
+Render Cron Job または /api/collect エンドポイントから呼び出す
+"""
+
+import feedparser
+import requests
+from datetime import datetime, timezone
+from bs4 import BeautifulSoup
+
+
+def parse_date(entry):
+    """feedのpublished日時をdatetimeに変換"""
+    for attr in ('published_parsed', 'updated_parsed', 'created_parsed'):
+        t = getattr(entry, attr, None)
+        if t:
+            try:
+                return datetime(*t[:6], tzinfo=timezone.utc).replace(tzinfo=None)
+            except Exception:
+                pass
+    return datetime.utcnow()
+
+
+def get_thumbnail(entry, feed_url):
+    """サムネイル画像URLを取得（メディア or OGP）"""
+    # feedのmedia:thumbnailやenclosure
+    if hasattr(entry, 'media_thumbnail') and entry.media_thumbnail:
+        return entry.media_thumbnail[0].get('url', '')
+    if hasattr(entry, 'enclosures') and entry.enclosures:
+        for enc in entry.enclosures:
+            if enc.get('type', '').startswith('image'):
+                return enc.get('url', '')
+    # OGPフォールバック（リンクがある場合のみ）
+    link = getattr(entry, 'link', '')
+    if link:
+        try:
+            res = requests.get(link, timeout=5, headers={'User-Agent': 'Mozilla/5.0'})
+            soup = BeautifulSoup(res.text, 'html.parser')
+            og = soup.find('meta', property='og:image')
+            if og:
+                return og.get('content', '')
+        except Exception:
+            pass
+    return ''
+
+
+def guess_category(text):
+    """テキストからカテゴリを推定"""
+    text = text.lower()
+    if any(w in text for w in ['パレード', 'parade', 'イベント', 'event', '祭', 'フェス', 'pride']):
+        return 'event'
+    if any(w in text for w in ['法律', '制度', '権利', '条例', '法案', '婚姻', '同性婚', 'rights']):
+        return 'rights'
+    if any(w in text for w in ['相談', 'サポート', '支援', '悩み', 'カウンセリング', 'support']):
+        return 'support'
+    if any(w in text for w in ['ニュース', '報道', '記事', 'news']):
+        return 'news'
+    return 'general'
+
+
+def guess_area(text):
+    """テキストからエリアを推定"""
+    if any(w in text for w in ['東京', '渋谷', '新宿', '池袋', '品川']):
+        return '東京'
+    if any(w in text for w in ['大阪', '梅田', '難波', '心斎橋']):
+        return '大阪'
+    if any(w in text for w in ['名古屋', '愛知']):
+        return '名古屋'
+    if any(w in text for w in ['福岡', '博多', '天神']):
+        return '福岡'
+    if any(w in text for w in ['オンライン', 'online', 'zoom', 'youtube', '配信']):
+        return 'オンライン'
+    return '全国'
+
+
+def collect_all(app, db, Article, RssFeed):
+    """全アクティブフィードを収集してDBに保存"""
+    results = {'feeds_checked': 0, 'new_articles': 0, 'skipped': 0, 'errors': []}
+
+    with app.app_context():
+        feeds = RssFeed.query.filter_by(is_active=True).all()
+        results['feeds_checked'] = len(feeds)
+
+        for feed in feeds:
+            try:
+                parsed = feedparser.parse(feed.url)
+
+                if parsed.bozo and not parsed.entries:
+                    results['errors'].append(f'{feed.name}: パース失敗')
+                    continue
+
+                for entry in parsed.entries[:20]:  # 1フィードあたり最大20件
+                    link = getattr(entry, 'link', '') or ''
+                    title = getattr(entry, 'title', '').strip()
+
+                    if not title:
+                        results['skipped'] += 1
+                        continue
+
+                    # 重複チェック（URLベース）
+                    if link and Article.query.filter_by(url=link).first():
+                        results['skipped'] += 1
+                        continue
+
+                    # サマリー取得
+                    summary = ''
+                    for attr in ('summary', 'description', 'content'):
+                        val = getattr(entry, attr, None)
+                        if val:
+                            if isinstance(val, list):
+                                val = val[0].get('value', '')
+                            summary = BeautifulSoup(val, 'html.parser').get_text()[:300]
+                            break
+
+                    full_text = title + ' ' + summary
+
+                    article = Article(
+                        title        = title[:200],
+                        summary      = summary,
+                        url          = link or None,
+                        source_name  = feed.name,
+                        source_type  = 'rss',
+                        category     = feed.category or guess_category(full_text),
+                        area         = feed.area or guess_area(full_text),
+                        image_url    = get_thumbnail(entry, feed.url),
+                        published_at = parse_date(entry),
+                    )
+                    db.session.add(article)
+                    results['new_articles'] += 1
+
+                feed.last_fetched = datetime.utcnow()
+                db.session.commit()
+
+            except Exception as e:
+                results['errors'].append(f'{feed.name}: {str(e)}')
+                db.session.rollback()
+
+    return results
+
+
+# --- スタンドアロン実行用 ---
+if __name__ == '__main__':
+    from app import app, db, Article, RssFeed
+    result = collect_all(app, db, Article, RssFeed)
+    print(f"✅ 収集完了: {result}")

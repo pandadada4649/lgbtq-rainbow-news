@@ -1,0 +1,397 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>🌈 Rainbow News — LGBTQニュース＆イベント自動まとめ</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700;900&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #0a0a0f;
+  --surface: #13131a;
+  --surface2: #1c1c28;
+  --border: #2a2a3a;
+  --text: #e8e8f0;
+  --text2: #888899;
+  --accent: #c084fc;
+  --accent2: #f472b6;
+  --accent3: #60a5fa;
+  --rainbow: linear-gradient(90deg,#f87171,#fb923c,#fbbf24,#4ade80,#60a5fa,#a78bfa,#f472b6);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Noto Sans JP',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;overflow-x:hidden}
+a{text-decoration:none;color:inherit}
+
+/* HEADER */
+header{
+  position:sticky;top:0;z-index:100;
+  background:rgba(10,10,15,0.85);backdrop-filter:blur(16px);
+  border-bottom:1px solid var(--border);
+  padding:0 20px;height:58px;
+  display:flex;align-items:center;justify-content:space-between;
+}
+.logo{display:flex;align-items:center;gap:10px}
+.logo-mark{
+  font-family:'Space Mono',monospace;font-size:.75rem;font-weight:700;
+  background:var(--rainbow);-webkit-background-clip:text;-webkit-text-fill-color:transparent;
+  letter-spacing:.05em
+}
+.logo-name{font-size:1rem;font-weight:900;color:var(--text);letter-spacing:-.02em}
+nav{display:flex;gap:4px;align-items:center}
+nav a{
+  padding:6px 14px;border-radius:20px;font-size:.82rem;color:var(--text2);
+  transition:.2s;white-space:nowrap
+}
+nav a:hover,nav a.active{background:var(--surface2);color:var(--text)}
+.btn-submit{
+  background:var(--accent);color:#fff;padding:7px 16px;border-radius:20px;
+  font-size:.82rem;font-weight:700;border:none;cursor:pointer;transition:.2s
+}
+.btn-submit:hover{background:#b06de0;transform:translateY(-1px)}
+
+/* RAINBOW BAR */
+.rainbow-bar{height:3px;background:var(--rainbow)}
+
+/* HERO / STATS */
+.hero{
+  padding:40px 20px 32px;max-width:1200px;margin:0 auto;
+  display:flex;align-items:center;justify-content:space-between;gap:20px;flex-wrap:wrap
+}
+.hero-text h1{
+  font-size:clamp(1.6rem,4vw,2.4rem);font-weight:900;
+  letter-spacing:-.04em;line-height:1.2;margin-bottom:8px
+}
+.hero-text h1 span{
+  background:var(--rainbow);-webkit-background-clip:text;-webkit-text-fill-color:transparent
+}
+.hero-text p{color:var(--text2);font-size:.9rem;line-height:1.6}
+.stats{display:flex;gap:16px;flex-wrap:wrap}
+.stat{
+  background:var(--surface);border:1px solid var(--border);border-radius:14px;
+  padding:14px 20px;text-align:center;min-width:80px
+}
+.stat-num{font-family:'Space Mono',monospace;font-size:1.5rem;font-weight:700;color:var(--accent);display:block}
+.stat-label{font-size:.7rem;color:var(--text2);margin-top:2px}
+
+/* SEARCH & FILTER */
+.filter-bar{
+  max-width:1200px;margin:0 auto;padding:0 20px 20px;
+  display:flex;gap:10px;flex-wrap:wrap;align-items:center
+}
+.search-input{
+  flex:1;min-width:200px;padding:10px 18px;
+  border:1px solid var(--border);border-radius:24px;
+  background:var(--surface);color:var(--text);font-size:.88rem;outline:none;
+  transition:.2s;font-family:inherit
+}
+.search-input:focus{border-color:var(--accent)}
+.search-input::placeholder{color:var(--text2)}
+.filter-select{
+  padding:10px 14px;border:1px solid var(--border);border-radius:24px;
+  background:var(--surface);color:var(--text);font-size:.82rem;outline:none;cursor:pointer
+}
+.search-btn{
+  padding:10px 20px;background:var(--accent);color:#fff;border:none;
+  border-radius:24px;font-size:.88rem;font-weight:700;cursor:pointer;transition:.2s;
+  font-family:inherit
+}
+.search-btn:hover{background:#b06de0}
+
+/* CATEGORY TABS */
+.cat-tabs{
+  max-width:1200px;margin:0 auto;padding:0 20px 24px;
+  display:flex;gap:8px;overflow-x:auto;scrollbar-width:none
+}
+.cat-tabs::-webkit-scrollbar{display:none}
+.cat-tab{
+  display:flex;align-items:center;gap:6px;padding:8px 16px;
+  border-radius:20px;border:1px solid var(--border);background:var(--surface);
+  font-size:.82rem;color:var(--text2);cursor:pointer;white-space:nowrap;
+  transition:.2s;text-decoration:none
+}
+.cat-tab:hover{border-color:var(--accent);color:var(--accent)}
+.cat-tab.active{background:var(--accent);border-color:var(--accent);color:#fff}
+
+/* FEATURED */
+.section{max-width:1200px;margin:0 auto;padding:0 20px 32px}
+.section-title{
+  font-size:.72rem;font-family:'Space Mono',monospace;letter-spacing:.12em;
+  color:var(--text2);text-transform:uppercase;margin-bottom:16px;
+  display:flex;align-items:center;gap:8px
+}
+.section-title::after{content:'';flex:1;height:1px;background:var(--border)}
+.featured-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:16px}
+.featured-card{
+  background:var(--surface);border:1px solid var(--border);border-radius:16px;
+  overflow:hidden;transition:.25s;position:relative
+}
+.featured-card:hover{border-color:var(--accent);transform:translateY(-3px);box-shadow:0 8px 30px rgba(192,132,252,.15)}
+.card-thumb{
+  width:100%;height:180px;object-fit:cover;background:var(--surface2);
+  display:flex;align-items:center;justify-content:center;font-size:3rem
+}
+.card-thumb img{width:100%;height:100%;object-fit:cover}
+.featured-badge{
+  position:absolute;top:12px;left:12px;
+  background:var(--accent2);color:#fff;
+  font-size:.68rem;font-weight:700;padding:3px 10px;border-radius:8px;
+  font-family:'Space Mono',monospace;letter-spacing:.05em
+}
+.source-badge{
+  position:absolute;top:12px;right:12px;
+  background:rgba(0,0,0,.6);backdrop-filter:blur(4px);
+  color:var(--text2);font-size:.68rem;padding:3px 10px;border-radius:8px
+}
+.card-body{padding:16px}
+.card-cat{
+  display:inline-block;font-size:.68rem;font-weight:700;font-family:'Space Mono',monospace;
+  padding:2px 10px;border-radius:8px;margin-bottom:8px;
+  background:var(--surface2);color:var(--accent);letter-spacing:.04em
+}
+.card-title{
+  font-size:.95rem;font-weight:700;line-height:1.45;margin-bottom:8px;
+  display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden
+}
+.card-summary{
+  font-size:.78rem;color:var(--text2);line-height:1.6;
+  display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;
+  margin-bottom:10px
+}
+.card-meta{display:flex;align-items:center;gap:10px;font-size:.72rem;color:var(--text2)}
+.card-meta .area-tag{
+  background:var(--surface2);padding:2px 8px;border-radius:6px;color:var(--text2)
+}
+.rss-dot{
+  width:6px;height:6px;border-radius:50%;background:#4ade80;
+  display:inline-block;flex-shrink:0
+}
+.user-dot{
+  width:6px;height:6px;border-radius:50%;background:var(--accent2);
+  display:inline-block;flex-shrink:0
+}
+
+/* ARTICLES GRID */
+.articles-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:14px}
+.article-card{
+  background:var(--surface);border:1px solid var(--border);border-radius:14px;
+  padding:16px;transition:.2s;display:flex;flex-direction:column;gap:8px
+}
+.article-card:hover{border-color:var(--accent);transform:translateY(-2px)}
+.article-title{
+  font-size:.9rem;font-weight:700;line-height:1.45;
+  display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden
+}
+.article-summary{
+  font-size:.76rem;color:var(--text2);line-height:1.6;flex:1;
+  display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden
+}
+.article-footer{
+  display:flex;align-items:center;justify-content:space-between;
+  padding-top:8px;border-top:1px solid var(--border)
+}
+.read-more{
+  font-size:.75rem;color:var(--accent);font-weight:700;
+  display:flex;align-items:center;gap:4px
+}
+
+/* EMPTY */
+.empty{text-align:center;padding:80px 20px;color:var(--text2);grid-column:1/-1}
+.empty-icon{font-size:3rem;margin-bottom:12px}
+
+/* PAGINATION */
+.pagination{
+  display:flex;justify-content:center;gap:8px;padding:24px 20px;flex-wrap:wrap
+}
+.page-btn{
+  padding:8px 16px;border-radius:20px;border:1px solid var(--border);
+  background:var(--surface);color:var(--text2);font-size:.82rem;cursor:pointer;
+  transition:.2s;text-decoration:none
+}
+.page-btn:hover{border-color:var(--accent);color:var(--accent)}
+.page-btn.active{background:var(--accent);border-color:var(--accent);color:#fff}
+
+/* FOOTER */
+footer{
+  border-top:1px solid var(--border);padding:24px 20px;
+  text-align:center;color:var(--text2);font-size:.78rem;margin-top:40px
+}
+footer a{color:var(--accent)}
+
+/* RESPONSIVE */
+@media(max-width:640px){
+  .hero{flex-direction:column}
+  .stats{justify-content:center}
+  .articles-grid{grid-template-columns:1fr}
+  nav a:not(.btn-submit){display:none}
+}
+</style>
+</head>
+<body>
+
+<div class="rainbow-bar"></div>
+<header>
+  <a href="/" class="logo">
+    <span class="logo-mark">RAINBOW</span>
+    <span class="logo-name">News</span>
+  </a>
+  <nav>
+    <a href="/" class="active">ホーム</a>
+    <a href="{{ url_for('feeds_list') }}">フィード管理</a>
+    <a href="{{ url_for('submit') }}" class="btn-submit">＋ 情報を投稿</a>
+  </nav>
+</header>
+
+<div class="hero">
+  <div class="hero-text">
+    <h1>日本のLGBTQ<span>ニュース＆</span><br><span>イベント</span>を自動収集</h1>
+    <p>全国のRSSフィードから最新情報を自動でまとめています</p>
+  </div>
+  <div class="stats" id="statsArea">
+    <div class="stat"><span class="stat-num" id="statTotal">-</span><div class="stat-label">記事総数</div></div>
+    <div class="stat"><span class="stat-num" id="statRss">-</span><div class="stat-label">RSS収集</div></div>
+    <div class="stat"><span class="stat-num" id="statUser">-</span><div class="stat-label">ユーザー投稿</div></div>
+    <div class="stat"><span class="stat-num" id="statFeeds">-</span><div class="stat-label">登録フィード</div></div>
+  </div>
+</div>
+
+<form method="GET" action="/">
+  <div class="filter-bar">
+    <input type="hidden" name="cat" value="{{ active_cat }}">
+    <input class="search-input" type="text" name="q" placeholder="キーワードで検索..." value="{{ q }}">
+    <select class="filter-select" name="area" onchange="this.form.submit()">
+      <option value="">エリア: 全国</option>
+      {% for a in areas %}
+        <option value="{{ a }}" {% if active_area == a %}selected{% endif %}>{{ a }}</option>
+      {% endfor %}
+    </select>
+    <button class="search-btn" type="submit">検索</button>
+  </div>
+</form>
+
+<div class="cat-tabs">
+  {% for c in categories %}
+  <a href="/?cat={{ c.id }}&area={{ active_area }}&q={{ q }}"
+     class="cat-tab {% if active_cat == c.id %}active{% endif %}">
+    {{ c.emoji }} {{ c.label }}
+  </a>
+  {% endfor %}
+</div>
+
+{% if featured and active_cat == 'all' and not q and not active_area %}
+<div class="section">
+  <div class="section-title">FEATURED</div>
+  <div class="featured-grid">
+    {% for a in featured %}
+    <a href="{{ a.url or url_for('article_detail', article_id=a.id) }}" target="{{ '_blank' if a.url else '_self' }}" class="featured-card">
+      <div class="card-thumb">
+        {% if a.image_url %}
+          <img src="{{ a.image_url }}" alt="" onerror="this.parentElement.innerHTML='🌈'">
+        {% else %}
+          🌈
+        {% endif %}
+      </div>
+      <div class="featured-badge">FEATURED</div>
+      <div class="source-badge">
+        {% if a.source_type == 'rss' %}RSS{% else %}投稿{% endif %}
+      </div>
+      <div class="card-body">
+        <div class="card-cat">{{ a.category | upper }}</div>
+        <div class="card-title">{{ a.title }}</div>
+        <div class="card-summary">{{ a.summary }}</div>
+        <div class="card-meta">
+          {% if a.source_type == 'rss' %}
+            <span class="rss-dot"></span>
+          {% else %}
+            <span class="user-dot"></span>
+          {% endif %}
+          <span>{{ a.source_name }}</span>
+          {% if a.area %}<span class="area-tag">{{ a.area }}</span>{% endif %}
+          <span>{{ a.published_at.strftime('%m/%d') if a.published_at else '' }}</span>
+        </div>
+      </div>
+    </a>
+    {% endfor %}
+  </div>
+</div>
+{% endif %}
+
+<div class="section">
+  <div class="section-title">
+    {% if q %}「{{ q }}」の検索結果 — {{ total }}件
+    {% elif active_cat != 'all' %}{{ active_cat | upper }} — {{ total }}件
+    {% else %}最新記事 — {{ total }}件{% endif %}
+  </div>
+  <div class="articles-grid">
+    {% if articles.items %}
+      {% for a in articles.items %}
+      <a href="{{ a.url or url_for('article_detail', article_id=a.id) }}"
+         target="{{ '_blank' if a.url else '_self' }}"
+         class="article-card">
+        <div class="card-cat">{{ a.category | upper }}</div>
+        <div class="article-title">{{ a.title }}</div>
+        {% if a.summary %}
+        <div class="article-summary">{{ a.summary }}</div>
+        {% endif %}
+        <div class="article-footer">
+          <div class="card-meta">
+            {% if a.source_type == 'rss' %}
+              <span class="rss-dot"></span>
+            {% else %}
+              <span class="user-dot"></span>
+            {% endif %}
+            <span>{{ a.source_name }}</span>
+            {% if a.area %}<span class="area-tag">{{ a.area }}</span>{% endif %}
+          </div>
+          <span class="read-more">読む →</span>
+        </div>
+      </a>
+      {% endfor %}
+    {% else %}
+      <div class="empty">
+        <div class="empty-icon">🌈</div>
+        <p>まだ記事がありません</p>
+        <p style="margin-top:8px;font-size:.82rem">RSSを収集するか、情報を投稿してみましょう</p>
+      </div>
+    {% endif %}
+  </div>
+</div>
+
+{% if articles.pages > 1 %}
+<div class="pagination">
+  {% if articles.has_prev %}
+    <a href="?cat={{ active_cat }}&area={{ active_area }}&q={{ q }}&page={{ articles.prev_num }}" class="page-btn">← 前へ</a>
+  {% endif %}
+  {% for p in articles.iter_pages(left_edge=1, right_edge=1, left_current=2, right_current=2) %}
+    {% if p %}
+      <a href="?cat={{ active_cat }}&area={{ active_area }}&q={{ q }}&page={{ p }}"
+         class="page-btn {% if p == articles.page %}active{% endif %}">{{ p }}</a>
+    {% else %}
+      <span class="page-btn" style="color:var(--text2)">…</span>
+    {% endif %}
+  {% endfor %}
+  {% if articles.has_next %}
+    <a href="?cat={{ active_cat }}&area={{ active_area }}&q={{ q }}&page={{ articles.next_num }}" class="page-btn">次へ →</a>
+  {% endif %}
+</div>
+{% endif %}
+
+<footer>
+  <div style="margin-bottom:8px">
+    <span style="background:var(--rainbow);-webkit-background-clip:text;-webkit-text-fill-color:transparent;font-weight:900">Rainbow News</span>
+    — 日本のLGBTQニュース＆イベント自動まとめ
+  </div>
+  <div><a href="{{ url_for('feeds_list') }}">フィード管理</a> · <a href="{{ url_for('submit') }}">情報を投稿</a></div>
+</footer>
+
+<script>
+// Stats取得
+fetch('/api/stats').then(r=>r.json()).then(d=>{
+  document.getElementById('statTotal').textContent  = d.total_articles;
+  document.getElementById('statRss').textContent    = d.rss_articles;
+  document.getElementById('statUser').textContent   = d.user_articles;
+  document.getElementById('statFeeds').textContent  = d.active_feeds;
+});
+</script>
+</body>
+</html>

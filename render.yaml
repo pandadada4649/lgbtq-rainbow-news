@@ -1,0 +1,25 @@
+services:
+  - type: web
+    name: lgbtq-rainbow-news
+    env: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: gunicorn app:app
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: lgbtq-rainbow-news-db
+          property: connectionString
+      - key: CRON_SECRET
+        generateValue: true
+
+  - type: cron
+    name: lgbtq-rss-collector
+    env: python
+    schedule: "0 */3 * * *"   # 3時間ごとに収集
+    buildCommand: pip install -r requirements.txt
+    startCommand: python -c "from collector import collect_all; from app import app, db, Article, RssFeed; r=collect_all(app,db,Article,RssFeed); print(r)"
+
+databases:
+  - name: lgbtq-rainbow-news-db
+    databaseName: lgbtq_news
+    plan: free

@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>フィード管理 — Rainbow News</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700;900&family=Space+Mono:wght@700&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#0a0a0f;--surface:#13131a;--surface2:#1c1c28;--border:#2a2a3a;--text:#e8e8f0;--text2:#888899;--accent:#c084fc;--green:#4ade80;--red:#f87171}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Noto Sans JP',sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
+a{text-decoration:none;color:inherit}
+.rainbow-bar{height:3px;background:linear-gradient(90deg,#f87171,#fb923c,#fbbf24,#4ade80,#60a5fa,#a78bfa,#f472b6)}
+header{background:rgba(10,10,15,.9);border-bottom:1px solid var(--border);padding:0 20px;height:58px;display:flex;align-items:center;justify-content:space-between}
+.logo-name{font-size:1rem;font-weight:900}
+.back-btn{font-size:.82rem;color:var(--text2);padding:6px 14px;border:1px solid var(--border);border-radius:20px;transition:.2s}
+.back-btn:hover{border-color:var(--accent);color:var(--accent)}
+main{max-width:760px;margin:40px auto;padding:0 20px}
+h1{font-size:1.4rem;font-weight:900;margin-bottom:6px}
+.sub{color:var(--text2);font-size:.85rem;margin-bottom:32px}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:20px;padding:24px;margin-bottom:24px}
+.card h2{font-size:1rem;font-weight:700;margin-bottom:18px;color:var(--text2);text-transform:uppercase;font-family:'Space Mono',monospace;letter-spacing:.06em}
+.field{margin-bottom:14px}
+.field label{display:block;font-size:.78rem;font-weight:700;color:var(--text2);margin-bottom:5px;text-transform:uppercase;letter-spacing:.05em}
+.field input,.field select{width:100%;padding:10px 14px;border:1px solid var(--border);border-radius:10px;background:var(--surface2);color:var(--text);font-size:.88rem;outline:none;transition:.2s;font-family:inherit}
+.field input:focus,.field select:focus{border-color:var(--accent)}
+.field input::placeholder{color:var(--text2)}
+.field-row{display:flex;gap:10px}.field-row .field{flex:1}
+.add-btn{padding:10px 20px;background:var(--accent);color:#fff;border:none;border-radius:10px;font-size:.88rem;font-weight:700;cursor:pointer;transition:.2s;font-family:inherit}
+.add-btn:hover{background:#b06de0}
+.collect-btn{padding:10px 20px;background:var(--surface2);color:var(--green);border:1px solid var(--green);border-radius:10px;font-size:.88rem;font-weight:700;cursor:pointer;transition:.2s;font-family:inherit;display:flex;align-items:center;gap:6px}
+.collect-btn:hover{background:rgba(74,222,128,.1)}
+.collect-btn:disabled{opacity:.5;cursor:not-allowed}
+.btn-row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.result-box{margin-top:12px;padding:12px 16px;border-radius:10px;font-size:.82rem;font-family:'Space Mono',monospace;display:none}
+.result-box.success{background:rgba(74,222,128,.1);border:1px solid var(--green);color:var(--green)}
+.result-box.error{background:rgba(248,113,113,.1);border:1px solid var(--red);color:var(--red)}
+/* Feed list */
+.feed-item{
+  background:var(--surface2);border:1px solid var(--border);border-radius:14px;
+  padding:14px 16px;display:flex;align-items:center;gap:12px;margin-bottom:10px
+}
+.feed-dot{width:8px;height:8px;border-radius:50%;background:var(--green);flex-shrink:0}
+.feed-info{flex:1;min-width:0}
+.feed-name{font-weight:700;font-size:.88rem;margin-bottom:2px}
+.feed-url{font-size:.72rem;color:var(--text2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.feed-tags{display:flex;gap:6px;margin-top:4px}
+.tag{font-size:.68rem;padding:2px 8px;border-radius:6px;background:var(--surface);color:var(--text2)}
+.delete-form button{padding:6px 12px;background:transparent;color:var(--red);border:1px solid var(--red);border-radius:8px;font-size:.75rem;cursor:pointer;transition:.2s;font-family:inherit}
+.delete-form button:hover{background:rgba(248,113,113,.1)}
+.last-fetch{font-size:.7rem;color:var(--text2)}
+.empty-feeds{text-align:center;padding:40px;color:var(--text2)}
+</style>
+</head>
+<body>
+<div class="rainbow-bar"></div>
+<header>
+  <a href="/" class="logo-name">🌈 Rainbow News</a>
+  <a href="/" class="back-btn">← ホーム</a>
+</header>
+<main>
+  <h1>フィード管理</h1>
+  <p class="sub">RSSフィードを登録・管理して自動収集の対象を設定します</p>
+
+  <!-- 手動収集 -->
+  <div class="card">
+    <h2>手動で今すぐ収集</h2>
+    <div class="btn-row">
+      <button class="collect-btn" id="collectBtn" onclick="collectNow()">
+        <span id="collectIcon">⚡</span> 全フィードを今すぐ収集
+      </button>
+      <span style="font-size:.78rem;color:var(--text2)">登録中の全フィードからデータを取得します</span>
+    </div>
+    <div class="result-box" id="resultBox"></div>
+  </div>
+
+  <!-- フィード追加 -->
+  <div class="card">
+    <h2>フィードを追加</h2>
+    <form method="POST" action="{{ url_for('feed_add') }}">
+      <div class="field">
+        <label>フィード名</label>
+        <input type="text" name="name" required placeholder="例: 虹色ダイバーシティ">
+      </div>
+      <div class="field">
+        <label>RSS URL *</label>
+        <input type="url" name="url" required placeholder="https://example.com/feed/">
+      </div>
+      <div class="field-row">
+        <div class="field">
+          <label>カテゴリ</label>
+          <select name="category">
+            {% for c in categories %}
+              <option value="{{ c.id }}">{{ c.emoji }} {{ c.label }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="field">
+          <label>エリア</label>
+          <select name="area">
+            {% for a in areas %}
+              <option value="{{ a }}">{{ a }}</option>
+            {% endfor %}
+          </select>
+        </div>
+      </div>
+      <button class="add-btn" type="submit">＋ 追加する</button>
+    </form>
+  </div>
+
+  <!-- フィード一覧 -->
+  <div class="card">
+    <h2>登録フィード一覧 ({{ feeds | length }}件)</h2>
+    {% if feeds %}
+      {% for f in feeds %}
+      <div class="feed-item">
+        <div class="feed-dot"></div>
+        <div class="feed-info">
+          <div class="feed-name">{{ f.name }}</div>
+          <div class="feed-url">{{ f.url }}</div>
+          <div class="feed-tags">
+            <span class="tag">{{ f.category }}</span>
+            {% if f.area %}<span class="tag">{{ f.area }}</span>{% endif %}
+            {% if f.last_fetched %}
+              <span class="last-fetch">最終取得: {{ f.last_fetched.strftime('%m/%d %H:%M') }}</span>
+            {% else %}
+              <span class="last-fetch">未取得</span>
+            {% endif %}
+          </div>
+        </div>
+        <form class="delete-form" method="POST" action="{{ url_for('feed_delete', feed_id=f.id) }}" onsubmit="return confirm('削除しますか？')">
+          <button type="submit">削除</button>
+        </form>
+      </div>
+      {% endfor %}
+    {% else %}
+      <div class="empty-feeds">フィードが登録されていません</div>
+    {% endif %}
+  </div>
+</main>
+
+<script>
+async function collectNow() {
+  const btn = document.getElementById('collectBtn');
+  const icon = document.getElementById('collectIcon');
+  const box  = document.getElementById('resultBox');
+
+  btn.disabled = true;
+  icon.textContent = '⏳';
+  box.style.display = 'none';
+
+  try {
+    const res = await fetch('/api/collect', {
+      method: 'POST',
+      headers: {'X-Cron-Secret': 'dev-secret'}
+    });
+    const data = await res.json();
+    if (data.error) throw new Error(data.error);
+
+    box.className = 'result-box success';
+    box.textContent = `✅ 完了！ チェック: ${data.feeds_checked}フィード / 新規取得: ${data.new_articles}件 / スキップ: ${data.skipped}件 ${data.errors.length ? '/ エラー: ' + data.errors.join(', ') : ''}`;
+    box.style.display = 'block';
+
+    // 3秒後にリロード
+    setTimeout(() => location.reload(), 3000);
+  } catch(e) {
+    box.className = 'result-box error';
+    box.textContent = '❌ エラー: ' + e.message;
+    box.style.display = 'block';
+  }
+
+  btn.disabled = false;
+  icon.textContent = '⚡';
+}
+</script>
+</body>
+</html>
