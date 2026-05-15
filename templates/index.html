@@ -290,12 +290,7 @@ footer a{color:var(--accent)}
     <h1>日本の<em>LGBTQ+</em><br>ニュース＆イベント</h1>
     <p>全国のコミュニティの最新情報をお届けします</p>
   </div>
-  <div class="stats">
-    <div class="stat"><span class="stat-n" id="sTotal">-</span><div class="stat-l">記事総数</div></div>
-    <div class="stat"><span class="stat-n" id="sRss">-</span><div class="stat-l">RSS収集</div></div>
-    <div class="stat"><span class="stat-n" id="sUser">-</span><div class="stat-l">投稿</div></div>
-    <div class="stat"><span class="stat-n" id="sFeeds">-</span><div class="stat-l">フィード</div></div>
-  </div>
+ 
 </div>
 
 <form method="GET" action="/">
@@ -425,13 +420,6 @@ footer a{color:var(--accent)}
   <div><a href="{{ url_for('feeds_list') }}">フィード管理</a> · <a href="{{ url_for('submit') }}">情報を投稿</a></div>
 </footer>
 
-<script>
-fetch('/api/stats').then(r=>r.json()).then(d=>{
-  document.getElementById('sTotal').textContent = d.total_articles;
-  document.getElementById('sRss').textContent   = d.rss_articles;
-  document.getElementById('sUser').textContent  = d.user_articles;
-  document.getElementById('sFeeds').textContent = d.active_feeds;
-});
 document.addEventListener('click',e=>{
   const mm=document.getElementById('mm');
   if(!mm.contains(e.target)&&!e.target.closest('.hamburger'))mm.classList.remove('open');
