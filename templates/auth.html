@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>{{ page_title }} — Rainbow News</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&family=Poppins:wght@600;700&display=swap" rel="stylesheet">
+<style>
+:root{--white:#fff;--bg:#f8f7fc;--border:#eeebf8;--text:#1a1535;--text2:#6b6485;--text3:#b0abca;--accent:#7c5cbf;--pink:#f06292;--shadow:0 2px 16px rgba(124,92,191,.08)}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Noto Sans JP',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;display:flex;flex-direction:column}
+a{text-decoration:none;color:inherit}
+.rainbow-bar{height:4px;background:linear-gradient(90deg,#ff9aa2,#ffb347,#ffd700,#a8e6cf,#87ceeb,#c9b8ff,#ffb3d1)}
+header{background:var(--white);border-bottom:1px solid var(--border);height:60px;padding:0 24px;display:flex;align-items:center;justify-content:space-between;box-shadow:0 1px 8px rgba(0,0,0,.04)}
+.logo{display:flex;align-items:center;gap:8px}
+.logo-icon{width:30px;height:30px;border-radius:9px;background:linear-gradient(135deg,#f8bbd0,#e1bee7,#bbdefb);display:flex;align-items:center;justify-content:center;font-size:.9rem}
+.logo-name{font-family:'Poppins',sans-serif;font-size:.95rem;font-weight:700;background:linear-gradient(90deg,#7c5cbf,#f06292);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.back{font-size:.8rem;color:var(--text2);padding:6px 14px;border:1px solid var(--border);border-radius:16px;transition:.15s}
+.back:hover{border-color:#c9b8ff;color:var(--accent)}
+main{flex:1;display:flex;align-items:center;justify-content:center;padding:32px 16px}
+.card{background:var(--white);border:1px solid var(--border);border-radius:20px;padding:32px 28px;width:100%;max-width:420px;box-shadow:var(--shadow)}
+.card h1{font-size:1.3rem;font-weight:700;margin-bottom:6px}
+.card .sub{font-size:.82rem;color:var(--text2);margin-bottom:24px}
+.error{background:#fef2f2;border:1px solid #fecaca;color:#b91c1c;padding:10px 14px;border-radius:10px;font-size:.82rem;margin-bottom:16px}
+.field{margin-bottom:14px}
+.field label{display:block;font-size:.75rem;font-weight:700;color:var(--text2);margin-bottom:5px;text-transform:uppercase;letter-spacing:.05em}
+.field input{width:100%;padding:11px 16px;border:1.5px solid var(--border);border-radius:12px;background:var(--white);color:var(--text);font-size:.88rem;outline:none;transition:.15s;font-family:inherit}
+.field input:focus{border-color:#c9b8ff}
+.field input::placeholder{color:var(--text3)}
+.submit-btn{width:100%;padding:13px;background:linear-gradient(135deg,#7c5cbf,#f06292);color:#fff;border:none;border-radius:12px;font-size:.95rem;font-weight:700;cursor:pointer;transition:.15s;font-family:inherit;margin-top:4px}
+.submit-btn:hover{transform:translateY(-1px);box-shadow:0 5px 14px rgba(124,92,191,.3)}
+.link-row{text-align:center;margin-top:16px;font-size:.82rem;color:var(--text2)}
+.link-row a{color:var(--accent);font-weight:700}
+footer{padding:20px;text-align:center;font-size:.74rem;color:var(--text3)}
+</style>
+</head>
+<body>
+<div class="rainbow-bar"></div>
+<header>
+  <a href="/" class="logo">
+    <div class="logo-icon">🌈</div>
+    <span class="logo-name">Rainbow News</span>
+  </a>
+  <a href="/" class="back">← ホームへ</a>
+</header>
+<main>
+  <div class="card">
+    <h1>{{ page_title }}</h1>
+    <p class="sub">{% if is_signup %}Rainbow Newsへようこそ！{% else %}おかえりなさい🌈{% endif %}</p>
+    {% if error %}<div class="error">{{ error }}</div>{% endif %}
+    <form method="POST">
+      {% if is_signup %}
+      <div class="field">
+        <label>ユーザー名</label>
+        <input type="text" name="username" required placeholder="ニックネーム">
+      </div>
+      {% endif %}
+      <div class="field">
+        <label>メールアドレス</label>
+        <input type="email" name="email" required placeholder="example@email.com">
+      </div>
+      <div class="field">
+        <label>パスワード{% if is_signup %}（8文字以上）{% endif %}</label>
+        <input type="password" name="password" required placeholder="パスワード">
+      </div>
+      <button class="submit-btn" type="submit">
+        {% if is_signup %}✨ 登録して始める{% else %}🌈 ログイン{% endif %}
+      </button>
+    </form>
+    <div class="link-row">
+      {% if is_signup %}
+        アカウントをお持ちの方は <a href="{{ url_for('login') }}">ログイン</a>
+      {% else %}
+        アカウントをお持ちでない方は <a href="{{ url_for('signup') }}">新規登録</a>
+      {% endif %}
+    </div>
+  </div>
+</main>
+<footer>Rainbow News — LGBTQ+ Japan</footer>
+</body>
+</html>
