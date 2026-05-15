@@ -114,7 +114,7 @@ def collect_all(app, db, Article, RssFeed):
                         source_type  = 'rss',
                         category     = feed.category or guess_category(full_text),
                         area         = feed.area or guess_area(full_text),
-                        image_url    = get_thumbnail(entry, feed.url),
+                        image_url    = get_thumbnail(entry, feed.url) if 'google' not in feed.url else '',
                         published_at = parse_date(entry),
                     )
                     db.session.add(article)
