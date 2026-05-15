@@ -22,25 +22,17 @@ def parse_date(entry):
 
 
 def get_thumbnail(entry, feed_url):
-    """サムネイル画像URLを取得（メディア or OGP）"""
-    # feedのmedia:thumbnailやenclosure
+    """サムネイル画像URLを取得（メディアのみ、OGPは取得しない）"""
     if hasattr(entry, 'media_thumbnail') and entry.media_thumbnail:
-        return entry.media_thumbnail[0].get('url', '')
+        url = entry.media_thumbnail[0].get('url', '')
+        if url and 'google' not in url and 'gstatic' not in url:
+            return url
     if hasattr(entry, 'enclosures') and entry.enclosures:
         for enc in entry.enclosures:
             if enc.get('type', '').startswith('image'):
-                return enc.get('url', '')
-    # OGPフォールバック（リンクがある場合のみ）
-    link = getattr(entry, 'link', '')
-    if link:
-        try:
-            res = requests.get(link, timeout=5, headers={'User-Agent': 'Mozilla/5.0'})
-            soup = BeautifulSoup(res.text, 'html.parser')
-            og = soup.find('meta', property='og:image')
-            if og:
-                return og.get('content', '')
-        except Exception:
-            pass
+                url = enc.get('url', '')
+                if url and 'google' not in url:
+                    return url
     return ''
 
 
