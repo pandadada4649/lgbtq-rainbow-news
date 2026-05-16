@@ -397,7 +397,7 @@ footer a{color:var(--accent)}
     {% else %}
       <div class="empty">
         <div class="empty-icon">🌈</div>
-        <p>まだ記事がありません<br>
+        <p>このカテゴリの記事はまだありません</p>
         <a href="{{ url_for('feeds_list') }}" style="color:var(--accent);font-weight:700">フィード管理</a>からRSSを収集してみましょう</p>
       </div>
     {% endif %}
@@ -424,6 +424,7 @@ footer a{color:var(--accent)}
 <footer>
   <div class="foot-logo">Rainbow News 🌈</div>
   <div style="margin-bottom:6px">日本のLGBTQ+コミュニティのニュース＆イベント情報</div>
+　<div style="margin-bottom:6px;font-size:.72rem">各記事の著作権は元のメディア・団体に帰属します</div>
   <div><a href="{{ url_for('feeds_list') }}">フィード管理</a> · <a href="{{ url_for('submit') }}">情報を投稿</a></div>
 </footer>
 
