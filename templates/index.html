@@ -85,18 +85,7 @@ nav{display:flex;align-items:center;gap:4px}
   -webkit-background-clip:text;-webkit-text-fill-color:transparent
 }
 .hero-left p{font-size:.85rem;color:var(--text2);line-height:1.6}
-.stats{display:flex;gap:10px}
-.stat{
-  background:var(--white);border:1px solid var(--border);
-  border-radius:14px;padding:10px 18px;text-align:center;
-  box-shadow:var(--shadow)
-}
-.stat-n{
-  font-family:'Poppins',sans-serif;font-size:1.4rem;font-weight:700;
-  background:linear-gradient(135deg,#7c5cbf,#f06292);
-  -webkit-background-clip:text;-webkit-text-fill-color:transparent;display:block
-}
-.stat-l{font-size:.65rem;color:var(--text3);font-weight:500}
+
 
 /* SEARCH BAR */
 .search-bar{
@@ -299,11 +288,7 @@ footer a{color:var(--accent)}
     <h1>日本の<em>LGBTQ+</em><br>ニュース＆イベント</h1>
     <p>全国のコミュニティの最新情報をお届けします</p>
   </div>
-  <div class="stats">
-    <div class="stat"><span class="stat-n" id="sTotal">-</span><div class="stat-l">記事総数</div></div>
-    <div class="stat"><span class="stat-n" id="sRss">-</span><div class="stat-l">RSS収集</div></div>
-    <div class="stat"><span class="stat-n" id="sUser">-</span><div class="stat-l">投稿</div></div>
-    <div class="stat"><span class="stat-n" id="sFeeds">-</span><div class="stat-l">フィード</div></div>
+</div>
   </div>
 </div>
 
@@ -406,8 +391,7 @@ footer a{color:var(--accent)}
     {% else %}
       <div class="empty">
         <div class="empty-icon">🌈</div>
-        <p>まだ記事がありません<br>
-        <a href="{{ url_for('feeds_list') }}" style="color:var(--accent);font-weight:700">フィード管理</a>からRSSを収集してみましょう</p>
+        <p>このカテゴリの記事はまだありません</p>
       </div>
     {% endif %}
   </div>
@@ -438,12 +422,7 @@ footer a{color:var(--accent)}
 </footer>
 
 <script>
-fetch('/api/stats').then(r=>r.json()).then(d=>{
-  document.getElementById('sTotal').textContent = d.total_articles;
-  document.getElementById('sRss').textContent   = d.rss_articles;
-  document.getElementById('sUser').textContent  = d.user_articles;
-  document.getElementById('sFeeds').textContent = d.active_feeds;
-});
+
 document.addEventListener('click',e=>{
   const mm=document.getElementById('mm');
   if(!mm.contains(e.target)&&!e.target.closest('.hamburger'))mm.classList.remove('open');
